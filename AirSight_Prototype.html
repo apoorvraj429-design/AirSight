@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AirSight — Urban Air Quality Intelligence · Delhi NCR</title>
+<style>
+:root{
+  --paper:#F2F5F7; --surface:#FFFFFF; --ink:#182530; --muted:#5D7184; --faint:#8FA3B3;
+  --line:#DCE4EA; --line-soft:#E8EEF2;
+  --accent:#155E75; --accent-soft:#E3F0F4; --accent-ink:#0E4B5E;
+  --alert:#C2410C; --alert-soft:#FBEDE4;
+  --ok:#199B57;
+  --aqi1:#1E9E58; --aqi2:#7DBA45; --aqi3:#E3B31C; --aqi4:#E2711D; --aqi5:#D64545; --aqi6:#8E1D2F;
+  --mono:Calibri,'Segoe UI',-apple-system,system-ui,Roboto,'Helvetica Neue',Arial,sans-serif;
+  --sans:Calibri,'Segoe UI',-apple-system,system-ui,Roboto,'Helvetica Neue',Arial,sans-serif;
+  --shadow:0 1px 2px rgba(24,37,48,.05),0 4px 16px rgba(24,37,48,.06);
+  --r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:14.5px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ── top bar ─────────────────────────────── */
+.topbar{display:flex;align-items:center;gap:18px;background:var(--surface);border-bottom:1px solid var(--line);padding:0 22px;height:58px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{width:30px;height:30px}
+.brand-name{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.brand-name span{color:var(--accent)}
+.brand-sub{font-size:10.5px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:1px}
+.top-divider{width:1px;height:26px;background:var(--line)}
+.city-select{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
+.city-select .chev{color:var(--faint);font-size:10px}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.sim-clock{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--paper);border:1px solid var(--line);padding:5px 10px;border-radius:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:20px}
+.chip-sim{background:#FDF6E3;color:#8A6A0B;border:1px solid #EAD9A0}
+.chip-live{background:var(--accent-soft);color:var(--accent-ink);border:1px solid #BFDCE5}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.dot{animation:pulse 2s infinite}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── tabs ─────────────────────────────── */
+.tabs{display:flex;gap:2px;background:var(--surface);border-bottom:1px solid var(--line);padding:0 22px}
+.tab{border:none;background:none;padding:12px 16px 11px;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;display:flex;align-items:center;gap:7px}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--accent-ink);border-bottom-color:var(--accent)}
+.tab .mini-chip{font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:9px;background:var(--paper);color:var(--faint);border:1px solid var(--line)}
+
+/* ── layout ─────────────────────────────── */
+.stage{display:none;padding:18px 22px 26px;max-width:1560px;margin:0 auto}
+.stage.active{display:block}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow)}
+.kpi .lab{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.kpi .val{font-size:27px;font-weight:750;letter-spacing:-.02em;line-height:1.05}
+.kpi .val small{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0}
+.kpi .sub{font-size:12px;color:var(--muted);margin-top:5px}
+.kpi .sub b{color:var(--ink)}
+.grid-main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);gap:16px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 18px 0}
+.card-h h3{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.card-h .meta{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.card-b{padding:12px 18px 16px}
+.stack>*+*{margin-top:16px}
+
+/* map */
+.mapwrap{position:relative;padding:8px 10px 12px}
+.mapwrap svg{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;padding:10px 18px 14px;border-top:1px solid var(--line-soft);font-size:11.5px;color:var(--muted)}
+.legend .li{display:flex;align-items:center;gap:6px}
+.legend .sw{width:12px;height:12px;border-radius:3px}
+
+/* attribution bars */
+.attr-row{display:grid;grid-template-columns:128px 1fr 92px;align-items:center;gap:10px;padding:7px 0}
+.attr-row .nm{font-size:12.5px;font-weight:600}
+.attr-row .bar{height:9px;background:var(--paper);border-radius:5px;overflow:hidden}
+.attr-row .bar i{display:block;height:100%;border-radius:5px}
+.attr-row .pct{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
+.conf-note{font-size:11px;color:var(--faint);margin-top:8px}
+
+/* feed */
+.feed{list-style:none}
+.feed li{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+.feed li:last-child{border-bottom:none}
+.feed .t{font-family:var(--mono);font-size:10.5px;color:var(--faint);white-space:nowrap;padding-top:2px}
+.feed .ic{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+.feed b{font-weight:650}
+
+/* selectable lists */
+.sel-list{list-style:none}
+.sel-list li{padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--surface)}
+.sel-list li:hover{border-color:var(--accent)}
+.sel-list li.on{border-color:var(--accent);background:var(--accent-soft)}
+.sel-list .nm{font-weight:650;font-size:13px}
+.sel-list .aq{font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff}
+
+/* evidence chain */
+.ev{display:grid;grid-template-columns:26px 1fr;gap:0 12px}
+.ev .n{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);font-family:var(--mono);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ev .ln{width:2px;background:var(--line);margin:2px auto;flex:1}
+.ev .cell{display:flex;flex-direction:column;align-items:center}
+.ev .txt{padding:2px 0 16px}
+.ev .txt b{font-size:13px}
+.ev .txt p{font-size:12px;color:var(--muted);margin-top:2px}
+.ev .txt .src{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:3px}
+
+/* timeline */
+.timeline{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--line-soft)}
+.play{width:36px;height:36px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center}
+.play:hover{background:var(--accent-ink)}
+.tl-track{flex:1;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.tl-day{border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:6px 4px 5px;text-align:center;cursor:pointer}
+.tl-day:hover{border-color:var(--accent)}
+.tl-day.on{background:var(--accent);border-color:var(--accent)}
+.tl-day .d{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tl-day .dt{font-family:var(--mono);font-size:11px;margin-top:1px;color:var(--ink)}
+.tl-day.on .d,.tl-day.on .dt{color:#fff}
+.tl-day .f{font-size:9.5px;margin-top:2px;color:var(--alert);font-weight:700;font-family:var(--mono)}
+.tl-day.on .f{color:#FFD9C7}
+
+/* stat pills row */
+.pills{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pill{border:1px solid var(--line);border-radius:8px;padding:11px 13px;background:var(--surface)}
+.pill .lab{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+.pill .val{font-size:21px;font-weight:750;margin-top:3px;letter-spacing:-.02em}
+.pill .val small{font-size:11.5px;color:var(--muted);font-weight:600}
+.pill.hot{border-color:#F1BFA4;background:var(--alert-soft)}
+.pill.hot .val{color:var(--alert)}
+
+/* enforcement table */
+.ttable{width:100%;border-collapse:collapse;font-size:12.5px}
+.ttable th{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+.ttable td{padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+.ttable tr.row{cursor:pointer}
+.ttable tr.row:hover td{background:var(--paper)}
+.ttable tr.row.on td{background:var(--accent-soft)}
+.ttable .rank{font-family:var(--mono);color:var(--faint);font-weight:700}
+.ttable .score{font-family:var(--mono);font-weight:750;font-size:13px}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;padding:2.5px 8px;border-radius:10px;text-transform:uppercase}
+.tag.stubble{background:#FBE9E1;color:#9A3412}
+.tag.industrial{background:#E8E4F7;color:#4C3A9E}
+.tag.construction{background:#FDF3D7;color:#8A6A0B}
+.tag.waste{background:#F1E5DC;color:#7C4A21}
+.tag.transport{background:#E1EFF6;color:#155E75}
+.confbar{display:inline-flex;align-items:center;gap:6px}
+.confbar .cb{width:52px;height:6px;background:var(--paper);border-radius:3px;overflow:hidden}
+.confbar .cb i{display:block;height:100%;background:var(--accent)}
+.confbar span{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* evidence packet */
+.packet .ph{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.packet h4{font-size:15px;font-weight:750;letter-spacing:-.01em}
+.packet .geo{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3px}
+.pk-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 14px;margin-top:13px}
+.pk-grid .f .l{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.pk-grid .f .v{font-size:12.5px;font-weight:600;margin-top:2px}
+.pk-grid .f .v.mono{font-family:var(--mono);font-weight:500;font-size:11.5px}
+.action-box{margin-top:14px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:11px 13px}
+.action-box .l{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.action-box p{font-size:12.5px;margin-top:4px}
+.action-box .legal{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:6px}
+.btnrow{display:flex;gap:9px;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:650;color:var(--ink)}
+.btn:hover{border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-ink)}
+
+/* proof thumb */
+.proof{margin-top:13px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.proof svg{display:block;width:100%}
+.proof .cap{font-family:var(--mono);font-size:10.5px;color:var(--muted);padding:6px 10px;border-top:1px solid var(--line-soft);background:var(--paper)}
+
+/* forecast */
+.fc-chart svg{width:100%;display:block}
+.rmse{display:flex;gap:12px;margin-top:6px}
+.rmse .box{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 13px}
+.rmse .box .l{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.rmse .box .v{font-size:19px;font-weight:750;margin-top:2px}
+.rmse .box.win{border-color:#BBDCC9;background:#EFF8F2}
+.rmse .box.win .v{color:var(--ok)}
+.lang-row{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 12px}
+.lang{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:5px 13px;font-size:12.5px;font-weight:600}
+.lang.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.advisory{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:14px;line-height:1.65}
+.advisory .hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.advisory .hd .b{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#fff;padding:3px 9px;border-radius:6px}
+.advisory .hd .w{font-size:12px;font-weight:700;color:var(--muted)}
+.vuln{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.vuln .v{border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12px;background:var(--surface)}
+.vuln .v b{font-size:14px;font-weight:750;margin-right:4px}
+.note{font-size:11px;color:var(--faint);margin-top:10px}
+
+/* GRAP bar */
+.grapbar{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 16px;margin-bottom:16px;box-shadow:var(--shadow);flex-wrap:wrap}
+.grap-badge{font-weight:800;font-size:14.5px;color:#fff;padding:6px 13px;border-radius:8px;white-space:nowrap}
+.grap-why{font-size:12.5px;color:var(--muted);max-width:420px}
+.grap-acts{display:flex;gap:16px;margin-left:auto;flex-wrap:wrap}
+.grap-acts .a{display:flex;gap:6px;align-items:baseline;font-size:12px}
+.grap-acts .st{font-weight:800}
+.grap-acts .ok{color:var(--ok)} .grap-acts .pend{color:var(--alert)}
+.grap-acts small{color:var(--faint);font-size:10.5px}
+
+/* impact simulator */
+.simrow{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line-soft);cursor:pointer}
+.simrow:last-of-type{border-bottom:none}
+.simrow input{accent-color:var(--accent);width:16px;height:16px;margin-top:2px;cursor:pointer}
+.simrow .t b{font-size:13px}
+.simrow .t p{font-size:11.5px;color:var(--muted);margin-top:1px}
+.sim-tot{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0 4px}
+.sim-tot .b{border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.sim-tot .b .l{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.sim-tot .b .v{font-size:18px;font-weight:750;margin-top:2px}
+.sim-tot .b.money{border-color:#BBDCC9;background:#EFF8F2}
+.sim-tot .b.money .v{color:var(--ok)}
+
+/* farmer outreach pills */
+.pillrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.pillrow .p{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--surface)}
+.pillrow .p .v{font-size:18px;font-weight:750}
+.pillrow .p .l{font-size:10.5px;color:var(--muted);margin-top:1px;line-height:1.25}
+
+/* forecast ward select */
+.fc-select{font:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:7px;padding:4px 9px;background:#fff;color:var(--ink);cursor:pointer}
+.fc-select:hover{border-color:var(--accent)}
+
+/* toasts */
+#toast{position:fixed;bottom:24px;right:24px;z-index:60;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.toast{background:var(--ink);color:#fff;padding:11px 16px;border-radius:9px;font-size:13px;box-shadow:0 10px 28px rgba(16,28,38,.3);max-width:380px}
+
+/* clickable affordances */
+.stn:hover circle:nth-child(2){stroke-width:4}
+.plot-hit{cursor:pointer}
+.plot-sel{pointer-events:none}
+.kpi.link{cursor:pointer}
+.kpi.link:hover{border-color:var(--accent)}
+.btn.done{border-color:#BBDCC9;background:#EFF8F2;color:var(--ok);cursor:default}
+.vtag{display:inline-block;font-size:9.5px;font-weight:800;color:var(--ok);background:#EFF8F2;border:1px solid #BBDCC9;border-radius:9px;padding:1.5px 7px;margin-left:6px;vertical-align:1px}
+.backlink{font-size:11.5px;color:var(--accent-ink);cursor:pointer;font-weight:650}
+.backlink:hover{text-decoration:underline}
+.footer{max-width:1560px;margin:0 auto;padding:6px 22px 20px;font-family:var(--mono);font-size:10.5px;color:var(--faint);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:1080px){.grid-main{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path d="M6 17 a10 10 0 0 1 20 0" stroke="#155E75" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M10.5 17 a5.5 5.5 0 0 1 11 0" stroke="#155E75" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>
+      <circle cx="16" cy="21.5" r="3.1" fill="#C2410C"/>
+    </svg>
+    <div>
+      <div class="brand-name">Air<span>Sight</span></div>
+      <div class="brand-sub">Urban Air Quality Intelligence</div>
+    </div>
+  </div>
+  <div class="top-divider"></div>
+  <div class="city-select" id="citySel" style="cursor:pointer" title="Multi-city — Module D">Delhi NCR <span class="chev">▼</span></div>
+  <div class="top-right">
+    <span class="chip chip-sim">Simulation · Oct 24–30</span>
+    <span class="sim-clock" id="simClock">Wed 28 Oct 2026 · 14:30 IST</span>
+    <span class="chip chip-live"><span class="dot"></span>38 / 40 stations reporting</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-tab="command" role="tab">Command Center</button>
+  <button class="tab" data-tab="attrib" role="tab">Source Attribution</button>
+  <button class="tab" data-tab="predict" role="tab">Stubble Watch <span class="mini-chip" style="background:var(--alert-soft);color:var(--alert);border-color:#F1BFA4">Predictive</span></button>
+  <button class="tab" data-tab="enforce" role="tab">Enforcement</button>
+  <button class="tab" data-tab="forecast" role="tab">Forecast &amp; Advisory <span class="mini-chip">Roadmap</span></button>
+</nav>
+
+<!-- ══════════ TAB 1 · COMMAND CENTER ══════════ -->
+<section class="stage active" id="stage-command">
+  <div class="kpis" id="cc-kpis"></div>
+  <div class="grapbar" id="grapBar"></div>
+  <div class="grid-main">
+    <div class="card">
+      <div class="card-h"><h3>City grid · live AQI &amp; wind field</h3><span class="meta">1 km grid · IDW from CAAQMS · WIND 310° / 14 km/h</span></div>
+      <div class="mapwrap" id="cityMap"></div>
+      <div class="legend" id="cityLegend"></div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <div class="card-h"><h3>Citywide source attribution</h3><span class="meta" id="cc-attr-meta">LAST 6 H</span></div>
+        <div class="card-b" id="cc-attr"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Signal feed</h3><span class="meta">AUTO-TRIAGED</span></div>
+        <div class="card-b"><ul class="feed" id="cc-feed"></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TAB 2 · SOURCE ATTRIBUTION ══════════ -->
+<section class="stage" id="stage-attrib">
+  <div class="grid-main" style="grid-template-columns:minmax(280px,.72fr) minmax(0,1.6fr)">
+    <div class="card">
+      <div class="card-h"><h3>Wards ranked by AQI</h3><span class="meta" id="at-meta"></span></div>
+      <div class="card-b"><ul class="sel-list" id="wardList"></ul></div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <div class="card-h"><h3 id="at-title">Attribution — Anand Vihar</h3><span class="meta">STATISTICAL CONFIDENCE SHOWN PER SOURCE</span></div>
+        <div class="card-b" id="wardAttr"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Evidence chain — why the model attributes this</h3><span class="meta" id="ev-meta"></span></div>
+        <div class="card-b"><div class="ev" id="evChain"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TAB 3 · STUBBLE WATCH ══════════ -->
+<section class="stage" id="stage-predict">
+  <div class="kpis" id="sw-kpis"></div>
+  <div class="grid-main">
+    <div class="card">
+      <div class="card-h"><h3>NW agricultural belt · plot-level burn lifecycle</h3><span class="meta">SENTINEL-2 CHANGE DETECTION + VIIRS THERMAL · 1,247 PLOTS</span></div>
+      <div class="mapwrap" id="beltMap"></div>
+      <div class="timeline">
+        <button class="play" id="playBtn" aria-label="Play episode">▶</button>
+        <div class="tl-track" id="tlTrack"></div>
+      </div>
+      <div class="legend" id="beltLegend"></div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <div class="card-h"><h3>Burn-risk forecast · next 72 h</h3><span class="meta" id="sw-meta"></span></div>
+        <div class="card-b" id="swPanel"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Flagged plot · registry record</h3><span class="meta" id="regMeta">PLOT SNP-04/117 · RISK 0.81</span></div>
+        <div class="card-b" id="regBody"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Farmer outreach · season CRM</h3><span class="meta">ADVISORY-FIRST · ENFORCEMENT IS THE FALLBACK</span></div>
+        <div class="card-b">
+          <div class="pillrow">
+            <div class="p"><div class="v">412</div><div class="l">farmers contacted on WhatsApp</div></div>
+            <div class="p"><div class="v">168</div><div class="l">baler / Happy Seeder bookings</div></div>
+            <div class="p"><div class="v">61</div><div class="l">subsidy applications filed</div></div>
+            <div class="p"><div class="v" style="color:var(--ok)">78</div><div class="l">burns avoided (est., season)</div></div>
+          </div>
+          <p class="note">Every risk-flagged plot triggers a burn-alternative nudge — baler, Happy Seeder or free bio-decomposer spray — before any enforcement step. Bookings routed to the district CRM machinery pool.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Plume transport to Delhi</h3><span class="meta">GAUSSIAN APPROXIMATION · NW 14 KM/H</span></div>
+        <div class="card-b" id="plumePanel"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TAB 4 · ENFORCEMENT ══════════ -->
+<section class="stage" id="stage-enforce">
+  <div class="kpis" id="en-kpis"></div>
+  <div class="grid-main">
+    <div class="stack">
+      <div class="card">
+        <div class="card-h"><h3>Today's enforcement queue</h3><span class="meta">SCORE = IMPACT × CONFIDENCE × EXPOSURE × HISTORY</span></div>
+        <div class="card-b" style="padding-top:6px"><table class="ttable" id="targetTable"></table></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Team North · optimised route</h3><span class="meta">5 STOPS · 38 KM · EST 4 H 10 M</span></div>
+        <div class="mapwrap" id="routeMap"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Impact simulator · next 24 h</h3><span class="meta">TICK AN INTERVENTION — SEE THE AIR CHANGE</span></div>
+        <div class="card-b" id="simBody"></div>
+      </div>
+    </div>
+    <div class="card packet">
+      <div class="card-h"><h3>Evidence packet</h3><span class="meta" id="pk-id"></span></div>
+      <div class="card-b" id="packetBody"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TAB 5 · FORECAST & ADVISORY ══════════ -->
+<section class="stage" id="stage-forecast">
+  <div class="grid-main">
+    <div class="stack">
+      <div class="card">
+        <div class="card-h"><h3 id="fcTitle">72-hour ward forecast — Anand Vihar</h3><select class="fc-select" id="fcWard" aria-label="Choose ward"></select></div>
+        <div class="card-b fc-chart" id="fcChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Backtest accuracy · Oct 2025 episode</h3><span class="meta">HOURLY · 40 STATIONS · 21 DAYS</span></div>
+        <div class="card-b">
+          <div class="rmse">
+            <div class="box"><div class="l">Persistence baseline RMSE</div><div class="v">41.7 <small style="font-size:12px;color:var(--muted)">AQI pts</small></div></div>
+            <div class="box win"><div class="l">AirSight model RMSE</div><div class="v">22.4 <small style="font-size:12px;color:var(--muted)">AQI pts</small></div></div>
+            <div class="box win"><div class="l">Improvement</div><div class="v">−46%</div></div>
+          </div>
+          <p class="note">Evaluation protocol follows the brief: RMSE against a persistence baseline at hyperlocal resolution over a 24–72 h horizon.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Citizen advisory — auto-generated</h3><span class="meta">WARD-LEVEL · IVR / APP / DISPLAY</span></div>
+      <div class="card-b">
+        <div class="lang-row" id="langRow"></div>
+        <div class="advisory" id="advisoryBox"></div>
+        <div class="vuln" id="vulnRow"></div>
+        <p class="note">Vulnerability layer: schools, hospitals and estimated outdoor-worker population inside the ward. Advisory copy is generated per CPCB health guidance for the forecast AQI band.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <span>AIRSIGHT PROTOTYPE v0.9 · SYNTHETIC + HISTORICAL-PATTERN DATA · CPCB AQI SCALE</span>
+  <span>DATA LAYERS: CAAQMS · SENTINEL-2 · VIIRS/MODIS · SENTINEL-5P · IMD WIND · DPCC PERMIT REGISTRY · ROADMAP FEEDS: IITM-DSS · SAFAR · SENSOR MESH · GEO FIRE WATCH</span>
+</footer>
+
+<div id="toast" aria-live="polite"></div>
+
+<script>
+/* ═══════════ seeded rng ═══════════ */
+let _s=42;const rnd=()=>{_s=(_s*1103515245+12345)&0x7fffffff;return _s/0x7fffffff};
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+/* ═══════════ shared data ═══════════ */
+const AQI_BANDS=[[50,'Good','--aqi1'],[100,'Satisfactory','--aqi2'],[200,'Moderate','--aqi3'],[300,'Poor','--aqi4'],[400,'Very Poor','--aqi5'],[500,'Severe','--aqi6']];
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const aqiBand=v=>AQI_BANDS.find(b=>v<=b[0])||AQI_BANDS[5];
+const aqiColor=v=>css(aqiBand(v)[2]);
+
+const CITY=[[452,38],[540,52],[602,88],[648,86],[700,120],[726,178],[718,236],[752,296],[762,364],[738,428],[756,470],[706,520],[668,596],[604,632],[560,700],[498,716],[452,676],[398,700],[336,664],[300,600],[236,568],[206,502],[168,472],[176,404],[148,352],[188,300],[176,244],[224,196],[262,148],[330,132],[366,80],[410,72]];
+
+const STATIONS=[
+ {id:'DL001',n:'Narela',x:470,y:95,base:372},
+ {id:'DL002',n:'Bawana',x:380,y:140,base:389},
+ {id:'DL003',n:'Alipur',x:530,y:128,base:358},
+ {id:'DL004',n:'Rohini',x:348,y:222,base:381},
+ {id:'DL005',n:'Jahangirpuri',x:468,y:212,base:401},
+ {id:'DL006',n:'Wazirpur',x:432,y:262,base:396},
+ {id:'DL007',n:'Ashok Vihar',x:472,y:288,base:366},
+ {id:'DL008',n:'Punjabi Bagh',x:352,y:322,base:372},
+ {id:'DL009',n:'Mundka',x:242,y:330,base:384},
+ {id:'DL010',n:'ITO',x:540,y:392,base:331},
+ {id:'DL011',n:'Anand Vihar',x:662,y:358,base:428},
+ {id:'DL012',n:'Lodhi Road',x:488,y:462,base:289},
+ {id:'DL013',n:'RK Puram',x:398,y:482,base:312},
+ {id:'DL014',n:'Dwarka Sec-8',x:252,y:518,base:301},
+ {id:'DL015',n:'Okhla Ph-2',x:556,y:562,base:337}
+];
+const DAY_F=[0.68,0.76,0.85,0.93,1.00,1.06,1.02];   // episode curve Oct 24→30
+const DATES=['Oct 24','Oct 25','Oct 26','Oct 27','Oct 28','Oct 29','Oct 30'];
+let simDay=4;                                        // 0-indexed → Oct 28
+const stAqi=(st,d=simDay)=>Math.min(500,Math.round(st.base*DAY_F[d]));
+
+/* attribution mixes (sum 100) — citywide and per-ward flavour */
+const SRC=[
+ {k:'stubble',n:'Stubble smoke (transported)',c:'#C2410C'},
+ {k:'transport',n:'Vehicular',c:'#155E75'},
+ {k:'construction',n:'Construction dust',c:'#B98A0E'},
+ {k:'industrial',n:'Industrial',c:'#5B4AA8'},
+ {k:'waste',n:'Open waste burning',c:'#8C5A2B'},
+ {k:'other',n:'Secondary / other',c:'#7C8B99'}
+];
+const CITY_MIX={stubble:34,transport:26,construction:15,industrial:11,waste:7,other:7};
+const WARD_MIX={
+ 'Anand Vihar':{mix:{stubble:31,transport:34,construction:12,industrial:9,waste:8,other:6},conf:{stubble:5,transport:4,construction:5,industrial:4,waste:6,other:7}},
+ 'Jahangirpuri':{mix:{stubble:41,transport:19,construction:13,industrial:12,waste:9,other:6},conf:{stubble:4,transport:5,construction:5,industrial:4,waste:6,other:7}},
+ 'Wazirpur':{mix:{stubble:36,transport:17,construction:11,industrial:23,waste:7,other:6},conf:{stubble:5,transport:5,construction:6,industrial:3,waste:6,other:7}},
+ 'Bawana':{mix:{stubble:44,transport:12,construction:10,industrial:19,waste:9,other:6},conf:{stubble:3,transport:6,construction:6,industrial:4,waste:6,other:7}},
+ 'Rohini':{mix:{stubble:42,transport:18,construction:20,industrial:7,waste:7,other:6},conf:{stubble:4,transport:5,construction:4,industrial:6,waste:6,other:7}},
+ 'Mundka':{mix:{stubble:38,transport:14,construction:12,industrial:16,waste:14,other:6},conf:{stubble:4,transport:6,construction:6,industrial:5,waste:4,other:7}},
+ 'ITO':{mix:{stubble:29,transport:38,construction:14,industrial:6,waste:6,other:7},conf:{stubble:5,transport:3,construction:5,industrial:6,waste:7,other:7}},
+ 'Okhla Ph-2':{mix:{stubble:27,transport:24,construction:16,industrial:15,waste:11,other:7},conf:{stubble:5,transport:5,construction:5,industrial:5,waste:5,other:7}}
+};
+const WARD_EXTRA={
+ 'Anand Vihar':{fires:12,traffic:'0.91 (P95)',permits:9,stacks:3,spike:'+38% vs 7-day median',bearing:'308°–322° upwind fire cluster SNP-04'},
+ 'Jahangirpuri':{fires:12,traffic:'0.74',permits:6,stacks:5,spike:'+41%',bearing:'305°–318° upwind cluster SNP-04'},
+ 'Wazirpur':{fires:12,traffic:'0.66',permits:4,stacks:14,spike:'+35%',bearing:'306°–319° + local stack signature'},
+ 'Bawana':{fires:12,traffic:'0.41',permits:3,stacks:18,spike:'+44%',bearing:'302°–315° nearest to belt'},
+ 'Rohini':{fires:12,traffic:'0.62',permits:11,stacks:2,spike:'+39%',bearing:'304°–317°'},
+ 'Mundka':{fires:12,traffic:'0.48',permits:5,stacks:9,spike:'+33%',bearing:'300°–314°'},
+ 'ITO':{fires:12,traffic:'0.95 (P98)',permits:7,stacks:1,spike:'+27%',bearing:'310°–324°'},
+ 'Okhla Ph-2':{fires:12,traffic:'0.71',permits:8,stacks:6,spike:'+24%',bearing:'312°–326°'}
+};
+
+/* ═══════════ geometry helpers ═══════════ */
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.getElementById('toast').appendChild(t);setTimeout(()=>t.remove(),2800)}
+function hashS(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))&0xffff;return h}
+
+/* GRAP stage per sim day (invoked on 72 h forecast, consistent with enforcement legal basis) */
+const GRAP=[
+ ['I','B98A0E','Invoked Oct 24 · citywide mean entered the Poor band',[['Mechanical sweeping & water sprinkling','ok','all zones'],['C&D dust-control audits','ok','routine'],['Open waste-burning patrols','ok','night shift']]],
+ ['I','B98A0E','Invoked Oct 24 · citywide mean in Poor band, rising trend',[['Mechanical sweeping & water sprinkling','ok','all zones'],['C&D dust-control audits','ok','routine'],['Open waste-burning patrols','ok','night shift']]],
+ ['II','E2711D','Escalated Oct 26 · Very Poor band + adverse 72 h wind forecast',[['Parking fee surge & bus/metro augmentation','ok','notified'],['DG-set restrictions (except emergency)','ok','monitoring'],['Hotspot-specific dust action','ok','11 wards']]],
+ ['III','C2410C','Invoked Oct 27 pre-emptively · 72 h forecast breached Severe (Anand Vihar)',[['Stop C&D at non-compliant sites','ok','2 sites auto-routed'],['DG-set curbs · BS-III petrol / BS-IV diesel LMV ban','ok','enforcing'],['Non-destined HGV diversion','pend','traffic order awaited']]],
+ ['III','C2410C','In force since Oct 27 · Severe readings at 3 stations',[['Stop C&D at non-compliant sites','ok','2 sites auto-routed'],['DG-set curbs · BS-III petrol / BS-IV diesel LMV ban','ok','enforcing'],['Non-destined HGV diversion','pend','traffic order awaited']]],
+ ['III','C2410C','In force · episode peak, review at 18:00 CAQM sub-committee',[['Stop C&D at non-compliant sites','ok','4 sites auto-routed'],['DG-set curbs · vehicle restrictions','ok','enforcing'],['School outdoor activity suspension','ok','advisories out']]],
+ ['III','C2410C','In force · easing trend, de-escalation review scheduled',[['Stop C&D at non-compliant sites','ok','holding'],['DG-set curbs · vehicle restrictions','ok','enforcing'],['De-escalation checklist','pend','pending 48 h stable trend']]]];
+function renderGrap(){
+  const g=GRAP[simDay];
+  document.getElementById('grapBar').innerHTML=
+   `<span class="grap-badge" style="background:#${g[1]}">GRAP STAGE ${g[0]} · IN FORCE</span>
+    <span class="grap-why">${g[2]}</span>
+    <span class="grap-acts">${g[3].map(a=>`<span class="a"><span class="st ${a[1]}">${a[1]==='ok'?'✓':'…'}</span><span>${a[0]}<br><small>${a[2]}</small></span></span>`).join('')}</span>`;
+}
+
+/* per-station attribution mix (falls back to a seeded variation of the city mix) */
+function wardMixFor(name){
+  if(WARD_MIX[name])return WARD_MIX[name];
+  let h=hashS(name);const mix={},conf={};let tot=0;
+  for(const s of SRC){h=(h*137+17)&0xffff;const j=(h%11)-5;mix[s.k]=Math.max(3,CITY_MIX[s.k]+j);tot+=mix[s.k];conf[s.k]=4+(h%4)}
+  let acc=0;const keys=SRC.map(s=>s.k);
+  keys.forEach((k,i)=>{mix[k]=i===keys.length-1?100-acc:Math.round(mix[k]*100/tot);acc+=mix[k]});
+  return{mix,conf};
+}
+let selStation=null;
+
+/* ═══════════ geometry helpers (spatial) ═══════════ */
+function inPoly(x,y,p){let ok=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const[xi,yi]=p[i],[xj,yj]=p[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ok=!ok}return ok}
+function idw(x,y,d){let sw=0,sv=0;for(const s of STATIONS){const dx=x-s.x,dy=y-s.y,dd=Math.max(60,dx*dx+dy*dy);const w=1/dd;sw+=w;sv+=w*stAqi(s,d)}
+  // NW plume gradient during active fire days
+  const fireK=[0,.15,.35,.6,1,.9,.5][d];
+  const nw=Math.max(0,1-Math.hypot(x-180,y-70)/620);
+  return sv/sw+fireK*nw*46}
+
+/* ═══════════ TAB 1 · command center ═══════════ */
+const DYN_FEED=[];
+function kpiCard(lab,val,sub,goto){return `<div class="kpi${goto?' link':''}"${goto?` data-goto="${goto}" title="Open ${goto}"`:''}><div class="lab">${lab}</div><div class="val">${val}</div><div class="sub">${sub}</div></div>`}
+
+function renderCommand(){
+  const vals=STATIONS.map(s=>stAqi(s));
+  const avg=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+  const worst=STATIONS.reduce((a,b)=>stAqi(a)>stAqi(b)?a:b);
+  const band=aqiBand(avg);
+  const firePlots=PLOTS.filter(p=>plotState(p,simDay)==='fire');
+  const beltFires=firePlots.length*4, fireClusters=new Set(firePlots.map(p=>p.c)).size;
+  document.getElementById('cc-kpis').innerHTML=
+    kpiCard('Citywide AQI (mean)',`${avg} <small>· ${band[1]}</small>`,`Worst ward: <b>${worst.n} ${stAqi(worst)}</b>`)+
+    kpiCard('Dominant source (6 h)',`Stubble smoke <small>34%</small>`,`Transported · confidence ±4%`)+
+    kpiCard('Active alerts',`${fireClusters+5}`,`<b>${beltFires}</b> belt fires in <b>${fireClusters}</b> clusters · <b>5</b> local violations`,'predict')+
+    kpiCard('Signal → dispatch (median)',`47 <small>min</small>`,`Baseline before routing: <b>~72 h</b>`,'enforce');
+
+  // map
+  const W=980,H=760,cell=24;let g='';
+  for(let x=150;x<780;x+=cell)for(let y=36;y<724;y+=cell){
+    const cx=x+cell/2,cy=y+cell/2;
+    if(!inPoly(cx,cy,CITY))continue;
+    const v=idw(cx,cy,simDay);
+    g+=`<rect x="${x}" y="${y}" width="${cell-1.5}" height="${cell-1.5}" rx="2.5" fill="${aqiColor(v)}" opacity="0.5"/>`}
+  // wind arrows (from NW → pointing SE)
+  let wind='';for(let x=200;x<760;x+=118)for(let y=90;y<700;y+=112){if(!inPoly(x,y,CITY))continue;
+    wind+=`<g transform="translate(${x},${y}) rotate(135)" opacity=".34"><line x1="-9" y1="0" x2="9" y2="0" stroke="#182530" stroke-width="1.6"/><path d="M9 0 l-4.5 -3 M9 0 l-4.5 3" stroke="#182530" stroke-width="1.6" fill="none"/></g>`}
+  const yamuna=`<path d="M562 40 C 590 140, 556 222, 578 302 C 598 382, 560 462, 598 542 C 618 592, 610 652, 592 712" stroke="#A9C6D8" stroke-width="13" fill="none" opacity=".7" stroke-linecap="round"/>`;
+  let st='';for(const s of STATIONS){const v=stAqi(s);const c=aqiColor(v);const on=s.n===selStation;
+    st+=`<g class="stn" data-n="${s.n}" style="cursor:pointer">
+      ${on?`<circle cx="${s.x}" cy="${s.y}" r="18" fill="none" stroke="#155E75" stroke-width="2.5" stroke-dasharray="4 3"/>`:''}
+      <circle cx="${s.x}" cy="${s.y}" r="13" fill="${c}" opacity=".18"/>
+      <circle cx="${s.x}" cy="${s.y}" r="6.5" fill="#fff" stroke="${c}" stroke-width="3"/>
+      <text x="${s.x}" y="${s.y-16}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#182530">${v}</text>
+      <text x="${s.x}" y="${s.y+24}" text-anchor="middle" font-size="10" fill="#5D7184">${s.n}</text></g>`}
+  document.getElementById('cityMap').innerHTML=
+   `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Delhi AQI grid map">
+      <path d="M${CITY.map(p=>p.join(' ')).join(' L')} Z" fill="#FAFCFD" stroke="#B9C8D3" stroke-width="2"/>
+      ${g}${yamuna}
+      <path d="M${CITY.map(p=>p.join(' ')).join(' L')} Z" fill="none" stroke="#8FA3B3" stroke-width="2.2"/>
+      ${wind}${st}
+      <g font-family="var(--mono)" font-size="10.5" fill="#8FA3B3">
+        <text x="166" y="60">HARYANA →</text><text x="700" y="700">← UTTAR PRADESH</text>
+      </g>
+    </svg>`;
+  document.getElementById('cityLegend').innerHTML=
+    AQI_BANDS.map(b=>`<span class="li"><span class="sw" style="background:${css(b[2])}"></span>${b[1]} ${b[0]==500?'401+':'≤'+b[0]}</span>`).join('')+
+    `<span class="li"><span style="color:#8FA3B3">— wind 310°/14 km h⁻¹ · grid = 1 km · 15 of 40 stations shown at this zoom</span></span>`;
+
+  renderGrap();
+
+  // attribution panel: citywide, or the clicked station's ward
+  const attrEl=document.getElementById('cc-attr');
+  const attrHead=attrEl.closest('.card').querySelector('h3');
+  if(selStation){
+    const W=wardMixFor(selStation), v=stAqi(STATIONS.find(x=>x.n===selStation));
+    attrHead.innerHTML=`Ward attribution — ${selStation} <span style="font-weight:600;color:${aqiColor(v)}">· ${v}</span>`;
+    attrEl.innerHTML=SRC.map(sr=>{const pd=W.mix[sr.k],c=W.conf[sr.k];
+      return `<div class="attr-row"><span class="nm">${sr.n}</span><span class="bar"><i style="width:${pd}%;background:${sr.c}"></i></span><span class="pct">${pd}% ± ${c}</span></div>`}).join('')+
+      `<p class="conf-note">Click another station on the map to compare, or <span class="backlink" id="attrBack">return to the citywide view</span>.</p>`;
+  }else{
+    attrHead.textContent='Citywide source attribution';
+    attrEl.innerHTML=SRC.map(sr=>{const pd=CITY_MIX[sr.k];
+      return `<div class="attr-row"><span class="nm">${sr.n}</span><span class="bar"><i style="width:${pd}%;background:${sr.c}"></i></span><span class="pct">${pd}% ± ${sr.k==='other'?7:4}</span></div>`}).join('')+
+      `<p class="conf-note">Attribution = spatio-temporal regression of grid AQI on source layers, weighted by wind cross-bearing. Click any station on the map for its ward-level breakdown.</p>`;
+  }
+
+  // feed
+  const feed=[
+   ['14:22','#C2410C','<b>VIIRS thermal anomaly</b> · 3 new fire pixels, cluster SNP-04 (Sonipat) — matched to plots flagged 52 h ago'],
+   ['14:05','#155E75','<b>Attribution shift</b> · Jahangirpuri stubble share 33% → 41% as plume edge crosses NW wards'],
+   ['13:48','#B98A0E','<b>Permit mismatch</b> · Active dust signature at Rohini Sec-24 site C-118 — permit expired 14 Oct'],
+   ['13:31','#C2410C','<b>Dispatch</b> · Team North en route to SNP-04 verification point · ETA 38 min'],
+   ['12:57','#5B4AA8','<b>Stack signature</b> · SO₂/NOₓ ratio at Wazirpur consistent with unauthorised fuel — flagged for inspection'],
+   ['12:12','#7C8B99','<b>Forecast update</b> · 24 h citywide mean revised 348 → 361 on IMD wind shift']];
+  document.getElementById('cc-feed').innerHTML=DYN_FEED.concat(feed).slice(0,7).map(f=>`<li><span class="t">${f[0]}</span><span class="ic" style="background:${f[1]}"></span><span>${f[2]}</span></li>`).join('');
+}
+
+/* ═══════════ TAB 2 · attribution ═══════════ */
+let selWard='Anand Vihar';
+function renderAttrib(){
+  const wards=Object.keys(WARD_MIX).map(n=>({n,v:stAqi(STATIONS.find(s=>s.n===n))})).sort((a,b)=>b.v-a.v);
+  document.getElementById('at-meta').textContent=`${DATES[simDay]} · 14:30`;
+  document.getElementById('wardList').innerHTML=wards.map(w=>
+    `<li class="${w.n===selWard?'on':''}" data-w="${w.n}" tabindex="0"><span class="nm">${w.n}</span><span class="aq" style="background:${aqiColor(w.v)}">${w.v}</span></li>`).join('');
+  const W=WARD_MIX[selWard],X=WARD_EXTRA[selWard],v=stAqi(STATIONS.find(s=>s.n===selWard));
+  document.getElementById('at-title').textContent=`Attribution — ${selWard} · AQI ${v}`;
+  document.getElementById('wardAttr').innerHTML=SRC.map(s=>{
+    const p=W.mix[s.k],c=W.conf[s.k];
+    return `<div class="attr-row"><span class="nm">${s.n}</span><span class="bar"><i style="width:${p}%;background:${s.c}"></i></span><span class="pct">${p}% ± ${c}</span></div>`}).join('')+
+    `<p class="conf-note">Per-source confidence intervals from bootstrap resampling (n = 500) over the trailing 6 h attribution window. Cross-checked against the published emission inventory (±6% agreement, 2025 backtest) — and field verifications refresh that inventory every season. Categories follow the CPCB source inventory taxonomy.</p>`;
+  document.getElementById('ev-meta').textContent=`WARD ${selWard.toUpperCase()} · WINDOW 08:30–14:30`;
+  const steps=[
+    ['Grid anomaly detected',`PM₂.₅ ${X.spike} in the ${selWard} 1 km cells — outside seasonal-hour envelope.`,'CAAQMS + 1 km fusion grid'],
+    ['Wind cross-bearing',`Back-trajectory places the incoming air mass along ${X.bearing}.`,'IMD wind field · HYSPLIT-style back-trajectory'],
+    ['Upwind fire match',`${X.fires} active VIIRS fire pixels sit inside that bearing cone, 68–92 km upwind — on plots whose registry sowing dates projected harvest this week.`,'VIIRS I-band 375 m · Sentinel-2 change detection · plot registry'],
+    ['Local source scan',`Traffic index ${X.traffic}; ${X.permits} active construction permits; ${X.stacks} registered stacks inside ward buffer.`,'Mobility feed · DPCC permit registry · stack inventory'],
+    ['Residual decomposition',`Regression assigns shares (left) after removing meteorology; residual within tolerance (R² 0.87).`,'AirSight attribution model v0.9']];
+  document.getElementById('evChain').innerHTML=steps.map((s,i)=>
+   `<div class="cell"><span class="n">${i+1}</span>${i<steps.length-1?'<span class="ln"></span>':''}</div>
+    <div class="txt"><b>${s[0]}</b><p>${s[1]}</p><div class="src">SOURCE: ${s[2].toUpperCase()}</div></div>`).join('');
+}
+
+/* ═══════════ TAB 3 · stubble watch ═══════════ */
+const CLUSTERS=[
+ {id:'KNL-01',n:'Karnal',cx:392,cy:112,count:42},
+ {id:'KTL-02',n:'Kaithal',cx:238,cy:132,count:34},
+ {id:'PNP-03',n:'Panipat',cx:512,cy:196,count:38},
+ {id:'JND-05',n:'Jind',cx:296,cy:252,count:30},
+ {id:'SNP-04',n:'Sonipat',cx:610,cy:308,count:46},
+ {id:'RTK-06',n:'Rohtak',cx:352,cy:392,count:36}];
+const PLOTS=[];
+const VILL={'KNL-01':['Taraori','Nilokheri','Gharaunda'],'KTL-02':['Pundri','Siwan','Rajaund'],'PNP-03':['Samalkha','Israna','Bapoli'],'JND-05':['Julana','Safidon','Uchana'],'SNP-04':['Kheri','Ganaur','Rai','Kharkhauda'],'RTK-06':['Meham','Kalanaur','Sampla']};
+(function(){_s=7;for(const c of CLUSTERS){const cols=Math.ceil(Math.sqrt(c.count*1.5));
+  for(let i=0;i<c.count;i++){const gx=i%cols,gy=Math.floor(i/cols);
+    const x=c.cx+(gx-cols/2)*21+rnd()*8-4,y=c.cy+(gy-2.6)*16+rnd()*7-3;
+    const harvest=1+Math.floor(rnd()*5.4);
+    const burns=rnd()<0.42;const off=2+Math.floor(rnd()*3.2);
+    const vs=VILL[c.id];const cr=rnd();const idx=PLOTS.length;const isBas=cr>=0.9;const pr=rnd();
+    PLOTS.push({i:idx,c:c.id,x,y,h:harvest,b:(burns&&!isBas)?Math.min(8,harvest+off):null,
+      no:100+((idx*37)%400),
+      farmer:'#'+c.id[0]+'-0'+(400+((idx*53)%480)),
+      village:vs[idx%vs.length],
+      crop:cr<0.68?'Paddy PR-126':(cr<0.9?'Paddy PUSA-44':'Basmati 1509'),
+      ha:(1.2+rnd()*3.4).toFixed(1),
+      prob:isBas?6+((idx*13)%9):(burns?62+Math.floor(pr*30):16+Math.floor(pr*22))})}}})();
+function plotState(p,d){const day=d+1;
+  if(day<p.h)return'standing';
+  if(p.b&&day===p.b)return'fire';
+  if(p.b&&day>p.b)return'burned';
+  if(p.b&&p.b<=day+3)return'risk';          // harvested + predicted burn ≤72h
+  return'bare'}
+const PLOT_C={standing:'#8FBF6E',bare:'#D9C79A',risk:'#D9C79A',fire:'#D64545',burned:'#6B7280'};
+
+/* registry card — dynamic per selected plot */
+let selPlot=null;
+function defaultPlot(){
+  let cand=PLOTS.find(pl=>pl.c==='SNP-04'&&plotState(pl,simDay)==='risk')||
+           PLOTS.find(pl=>plotState(pl,simDay)==='risk')||
+           PLOTS.find(pl=>plotState(pl,simDay)==='fire')||PLOTS[0];
+  return cand.i;
+}
+function renderRegistry(){
+  if(selPlot===null||selPlot===undefined)selPlot=defaultPlot();
+  const pl=PLOTS[selPlot], st=plotState(pl,simDay);
+  const win=`OCT ${21+pl.h}–${25+pl.h}`, sat=`OCT ${23+pl.h}`;
+  const pid=`${pl.c}/${pl.no}`;
+  const stLabel={standing:'STANDING CROP',bare:'HARVESTED',risk:`RISK 0.${pl.prob}`,fire:'ACTIVE FIRE',burned:'BURNED'}[st];
+  document.getElementById('regMeta').textContent=`PLOT ${pid} · ${stLabel}`;
+  const probRow=st==='standing'
+    ?`<div class="f"><div class="l">Status</div><div class="v">Standing crop · monitored</div></div>`
+    :`<div class="f"><div class="l">Burn probability</div><div class="v" style="color:${pl.prob>50?'var(--alert)':'var(--muted)'}">${pl.prob}% · next 72 h</div></div>`;
+  const satRow=st==='standing'
+    ?`<div class="f"><div class="l">Satellite status</div><div class="v mono">CANOPY INTACT</div></div>`
+    :`<div class="f"><div class="l">Satellite confirmation</div><div class="v mono">BARE SOIL · ${sat}</div></div>`;
+  const officerMsg={
+    standing:`Plot ${pid} (${pl.crop.toLowerCase()}, ${pl.ha} ha, Village ${pl.village}) — harvest window ${win} per registry. Watch begins on canopy change.`,
+    bare:`Plot ${pid} harvested; burn probability ${pl.prob}% — below dispatch threshold. Passive monitoring continues.`,
+    risk:`⚠ Plot ${pid} (${pl.crop.toLowerCase()}, ${pl.ha} ha, Village ${pl.village}) enters burn-risk window ${win} · probability ${pl.prob}%. Team North pre-positioned — verification point 4.2 km away.`,
+    fire:`🔥 Ignition confirmed on flagged plot ${pid} · VIIRS 375 m match. Evidence packet auto-assembled; Team North diverted, ETA 38 min.`,
+    burned:`Plot ${pid} burned on Oct ${23+(pl.b||6)}. Field verification complete · challan issued under Section 15, CAQM Act.`};
+  const officerHead={standing:'WATCHLIST NOTE',bare:'MONITORING NOTE',risk:'OFFICER ALERT · SENT '+sat+', 06:00',fire:'IGNITION ALERT · LIVE',burned:'CASE CLOSED'}[st];
+  const farmerBox=(st==='standing'||st==='bare'||st==='risk')?
+   `<div style="margin-top:9px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;color:var(--muted)">WHATSAPP · FARMER ADVISORY (ਪੰਜਾਬੀ) · CRM ALTERNATIVES</div>
+      <p style="font-size:12.5px;margin-top:5px">ਕਟਾਈ ਮੁਬਾਰਕ! ਪਰਾਲੀ ਨਾ ਸਾੜੋ — ਬੇਲਰ / ਹੈਪੀ ਸੀਡਰ ਬੁਕਿੰਗ, ਮੁਫ਼ਤ ਬਾਇਓ-ਡੀਕੰਪੋਜ਼ਰ ਸਪਰੇਅ ਅਤੇ ਸਬਸਿਡੀ ਲਈ ਸੰਪਰਕ ਕਰੋ: 1800-11-XXXX</p>
+    </div>`:'';
+  document.getElementById('regBody').innerHTML=
+   `<div class="pk-grid" style="margin-top:2px">
+      <div class="f"><div class="l">Farmer</div><div class="v">${pl.farmer} · Village ${pl.village}</div></div>
+      <div class="f"><div class="l">Crop · area</div><div class="v">${pl.crop} · ${pl.ha} ha</div></div>
+      <div class="f"><div class="l">Sown (registry)</div><div class="v mono">${10+pl.h*2} JUN 2026</div></div>
+      <div class="f"><div class="l">Harvest window (calendar)</div><div class="v mono">${win}</div></div>
+      ${satRow}${probRow}
+    </div>
+    <div style="margin-top:13px;background:${st==='fire'?'var(--alert-soft)':'#EDF7F0'};border:1px solid ${st==='fire'?'#F1BFA4':'#BFE3CC'};border-radius:8px;padding:10px 12px">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:.09em;color:${st==='fire'?'#9A3412':'#1F7A46'}">WHATSAPP · ${officerHead}</div>
+      <p style="font-size:12.5px;margin-top:5px">${officerMsg[st]}</p>
+    </div>${farmerBox}
+    <p class="note" style="margin-top:9px">Click any plot on the map to open its registry record. IDs anonymised in-product.</p>`;
+}
+
+const DELHI_MINI_T=(x,y)=>[(x-140)*0.30+752,(y-30)*0.30+372];
+function renderPredict(){
+  if(selPlot!==null&&selPlot!==undefined){const cs=plotState(PLOTS[selPlot],simDay);if(cs==='standing'&&simDay>2)selPlot=null;}
+  const counts={standing:0,bare:0,risk:0,fire:0,burned:0};
+  for(const p of PLOTS)counts[plotState(p,simDay)]++;
+  const predicted=counts.risk, fires=counts.fire, harvested=counts.bare+counts.risk+counts.fire+counts.burned;
+  document.getElementById('sw-kpis').innerHTML=
+    kpiCard('Plots in registry (belt)','1,247',`Geotagged by field agronomists · farmer + crop + sowing date`)+
+    kpiCard('Harvested · last 72 h',`${Math.round(harvested*0.42)}`,`Crop-calendar window confirmed by Sentinel-2`)+
+    `<div class="kpi" style="border-color:#F1BFA4;background:var(--alert-soft)"><div class="lab" style="color:#9A3412">Predicted burns · next 72 h</div><div class="val" style="color:var(--alert)">${predicted*4+7}</div><div class="sub">Mean confidence <b>78%</b> · flagged pre-ignition</div></div>`+
+    kpiCard('Active fires now',`${fires*4}`,`VIIRS 375 m · matched to flagged plots: <b>${Math.round(fires*4*0.86)}</b>`);
+
+  // belt map
+  const W=1100,H=640;
+  let plots='';for(const pl of PLOTS){const st=plotState(pl,simDay);
+    plots+=`<rect class="plot-hit" data-i="${pl.i}" x="${pl.x}" y="${pl.y}" width="15" height="11" rx="2" fill="${PLOT_C[st]}" ${st==='burned'?'opacity=".55"':''}/>`;
+    if(st==='risk')plots+=`<rect class="plot-sel" x="${pl.x-2.5}" y="${pl.y-2.5}" width="20" height="16" rx="4" fill="none" stroke="#C2410C" stroke-width="1.6" stroke-dasharray="3 2.4"/>`;
+    if(st==='fire')plots+=`<circle class="plot-sel" cx="${pl.x+7.5}" cy="${pl.y+5.5}" r="9" fill="#D64545" opacity=".25"/><circle class="plot-sel" cx="${pl.x+7.5}" cy="${pl.y+5.5}" r="3.4" fill="#B91C1C"/>`;
+    if(pl.i===selPlot)plots+=`<rect class="plot-sel" x="${pl.x-4.5}" y="${pl.y-4.5}" width="24" height="20" rx="5" fill="none" stroke="#155E75" stroke-width="2.2"/>`}
+  let labels='';for(const c of CLUSTERS)labels+=`<text x="${c.cx}" y="${c.cy-52}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#5D7184">${c.n} · ${c.id}</text>`;
+  // Delhi mini
+  const dpath='M'+CITY.map(p=>DELHI_MINI_T(p[0],p[1]).map(v=>v.toFixed(0)).join(' ')).join(' L')+' Z';
+  // plume from fire centroid (day≥2 fires exist)
+  let plume='';const firePlots=PLOTS.filter(p=>plotState(p,simDay)==='fire');
+  if(firePlots.length){const fx=firePlots.reduce((a,p)=>a+p.x,0)/firePlots.length,fy=firePlots.reduce((a,p)=>a+p.y,0)/firePlots.length;
+    const [dx,dy]=[850,470];
+    const nx=fy-dy, ny=dx-fx; const nl=Math.hypot(nx,ny); const ux=nx/nl, uy=ny/nl; const spread=64;
+    plume=`<defs><linearGradient id="pg" x1="${fx}" y1="${fy}" x2="${dx}" y2="${dy}" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C2410C" stop-opacity=".34"/><stop offset="1" stop-color="#C2410C" stop-opacity=".05"/></linearGradient></defs>
+      <path d="M${fx} ${fy} L${dx+ux*spread} ${dy+uy*spread} L${dx-ux*spread} ${dy-uy*spread} Z" fill="url(#pg)"/>
+      <line x1="${fx}" y1="${fy}" x2="${dx}" y2="${dy}" stroke="#C2410C" stroke-width="1.8" stroke-dasharray="6 5"/>
+      <g font-family="var(--mono)" font-size="11" fill="#9A3412"><text x="${(fx+dx)/2-30}" y="${(fy+dy)/2-12}">smoke transport · ETA 6–9 h</text></g>`}
+  document.getElementById('beltMap').innerHTML=
+   `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="NW agricultural belt plot map">
+      <rect x="0" y="0" width="${W}" height="${H}" fill="#FBFCFD"/>
+      <g font-family="var(--mono)" font-size="10.5" fill="#B0BFCB"><text x="18" y="26">HARYANA — NW AGRICULTURAL BELT</text><text x="880" y="626">DELHI NCT ↓</text></g>
+      ${plume}${plots}${labels}
+      <path d="${dpath}" fill="#EEF3F6" stroke="#8FA3B3" stroke-width="2"/>
+      <text x="850" y="475" text-anchor="middle" font-size="12" font-weight="700" fill="#5D7184">DELHI</text>
+      <g transform="translate(1020,70)"><circle r="26" fill="none" stroke="#DCE4EA"/><g transform="rotate(135)"><line x1="-16" y1="0" x2="16" y2="0" stroke="#182530" stroke-width="2"/><path d="M16 0 l-6 -4 M16 0 l-6 4" stroke="#182530" stroke-width="2" fill="none"/></g><text y="44" text-anchor="middle" font-size="10" font-family="var(--mono)" fill="#5D7184">NW 14 km/h</text></g>
+    </svg>`;
+  document.getElementById('beltLegend').innerHTML=[
+    ['#8FBF6E','Standing crop'],['#D9C79A','Harvested · bare soil'],['dash','Predicted burn ≤72 h'],['#D64545','Active fire (VIIRS)'],['#6B7280','Burned']]
+    .map(l=>l[0]==='dash'
+      ?`<span class="li"><span class="sw" style="background:#D9C79A;border:1.5px dashed #C2410C"></span>${l[1]}</span>`
+      :`<span class="li"><span class="sw" style="background:${l[0]}"></span>${l[1]}</span>`).join('')+
+    `<span class="li"><span style="font-family:var(--mono);color:#8FA3B3">map renders a 1:5 representative sample of 1,247 tracked plots</span></span>`;
+
+  document.getElementById('sw-meta').textContent=`${DATES[simDay]} · MODEL v0.9`;
+  document.getElementById('swPanel').innerHTML=
+   `<div class="pills">
+      <div class="pill"><div class="lab">Flagged plots</div><div class="val">${predicted*4+7}</div></div>
+      <div class="pill"><div class="lab">Mean lead time</div><div class="val">52 <small>h</small></div></div>
+      <div class="pill hot"><div class="lab">Top cluster</div><div class="val">SNP-04</div></div>
+    </div>
+    <p style="font-size:12.5px;margin-top:13px">Prediction runs on ground truth, not just pixels. Field agronomists geotag every plot and record the farmer, crop and sowing date. The crop calendar projects a harvest window; Sentinel-2 confirms the canopy→bare-soil transition; burn probability then combines district burn propensity, days-since-harvest and the IMD dry-spell index — plots are flagged and officers alerted <b>before any fire exists</b>.</p>
+    <p class="conf-note">Backtest on Oct–Nov 2025: 74% of actual fires occurred on plots flagged in advance; median lead time 52 h. Detection alone is now being gamed — burning peaks after the ~1:30 pm satellite overpass, so fire counts fall while smoke doesn't. A sowing-date prediction has no overpass to dodge.</p>`;
+  const wardEta=[['Bawana','06:10 h','+41 AQI'],['Rohini','06:55 h','+37 AQI'],['Jahangirpuri','07:20 h','+44 AQI'],['Punjabi Bagh','08:05 h','+31 AQI'],['ITO','08:50 h','+22 AQI']];
+  document.getElementById('plumePanel').innerHTML=fires?
+   `<table class="ttable"><tr><th>Ward (downwind)</th><th>Smoke ETA</th><th>Est. impact</th></tr>${
+     wardEta.map(w=>`<tr><td style="font-weight:650">${w[0]}</td><td class="score" style="font-weight:500">${w[1]}</td><td style="color:var(--alert);font-weight:700">${w[2]}</td></tr>`).join('')}</table>
+    <p class="conf-note">Gaussian plume approximation on IMD 10 m wind; impact = incremental ward-mean AQI over the following 12 h.</p>`
+   :`<p style="font-size:12.5px;color:var(--muted)">No active fires at this timestep. Flagged plots are being watched — dispatch is pre-positioned against the 72 h prediction.</p>`;
+  renderRegistry();
+}
+
+/* timeline */
+function renderTimeline(){
+  const t=document.getElementById('tlTrack');
+  t.innerHTML=DATES.map((d,i)=>{
+    const fires=PLOTS.filter(p=>plotState(p,i)==='fire').length*4;
+    return `<div class="tl-day ${i===simDay?'on':''}" data-d="${i}" tabindex="0"><div class="d">Day ${i+1}</div><div class="dt">${d}</div><div class="f">${fires?fires+' 🔥':'—'}</div></div>`}).join('');
+}
+let playing=null;
+document.addEventListener('click',e=>{
+  const day=e.target.closest('.tl-day');if(day){simDay=+day.dataset.d;refreshAll();return}
+  if(e.target.closest('#playBtn')){
+    if(playing){clearInterval(playing);playing=null;document.getElementById('playBtn').textContent='▶';return}
+    document.getElementById('playBtn').textContent='❚❚';simDay=0;refreshAll();
+    playing=setInterval(()=>{simDay++;if(simDay>6){clearInterval(playing);playing=null;document.getElementById('playBtn').textContent='▶';simDay=6}refreshAll()},1400)}
+});
+
+/* ═══════════ TAB 4 · enforcement ═══════════ */
+const TARGETS=[
+ {r:1,id:'ENF-0428',n:'Burn cluster SNP-04',w:'Sonipat belt',type:'stubble',score:94,conf:91,impact:'+44 AQI (Jahangirpuri, 12 h)',via:'VIIRS thermal · flagged pre-ignition 52 h prior',geo:'28.99°N 77.02°E',act:'Verify ignition on 6 flagged plots; issue challans under Section 15, CAQM Act; coordinate with Haryana SPCB field unit.',legal:'CAQM ACT 2021 §15 · GRAP STAGE III IN FORCE',team:'Team North',sla:'Dispatch 13:31 · on-site 14:09'},
+ {r:2,id:'ENF-0431',n:'Wazirpur industrial cluster',w:'Wazirpur',type:'industrial',score:88,conf:84,impact:'+19 AQI (ward-local)',via:'Stack SO₂/NOₓ ratio anomaly · CAAQMS cross-bearing',geo:'28.70°N 77.16°E',act:'Inspect 4 units for unauthorised fuel; sample stack emissions; verify against consent-to-operate conditions.',legal:'AIR ACT 1981 §31A · DPCC CONSENT CONDITIONS',team:'Team North',sla:'Queued · stop 3 of 5'},
+ {r:3,id:'ENF-0426',n:'Anand Vihar transport hub',w:'Anand Vihar',type:'transport',score:84,conf:80,impact:'+16 AQI (ward-local)',via:'Mobility feed idling density P98 · PM spike correlation',geo:'28.65°N 77.32°E',act:'Deploy PUC checking drive at ISBT gates; enforce idling restrictions; divert non-destined HGVs per GRAP-III.',legal:'GRAP STAGE III · MV ACT PUC NORMS',team:'Team East',sla:'Scheduled 16:00'},
+ {r:4,id:'ENF-0433',n:'Construction site C-118, Rohini Sec-24',w:'Rohini',type:'construction',score:81,conf:88,impact:'+12 AQI (2 km radius)',via:'Sentinel-2 activity on expired permit · dust signature',geo:'28.72°N 77.09°E',act:'Stop-work notice — permit expired 14 Oct; verify anti-smog measures; penalty per C&D Waste Rules.',legal:'C&D WASTE RULES 2016 · DPCC PERMIT DB',team:'Team North',sla:'Queued · stop 1 of 5'},
+ {r:5,id:'ENF-0419',n:'Open waste burning, Mundka',w:'Mundka',type:'waste',score:78,conf:76,impact:'+11 AQI (ward-local)',via:'VIIRS night thermal + citizen reports (3)',geo:'28.68°N 77.03°E',act:'Extinguish and cordon site; identify responsible party; MCD sanitation escalation for recurring location.',legal:'SWM RULES 2016 · NGT DIRECTIONS',team:'Team North',sla:'Queued · stop 2 of 5'},
+ {r:6,id:'ENF-0422',n:'Okhla C&D processing yard',w:'Okhla Ph-2',type:'construction',score:74,conf:72,impact:'+9 AQI (ward-local)',via:'Uncovered debris · dust plume on satellite pass',geo:'28.53°N 77.29°E',act:'Enforce covering and sprinkling norms; verify weighment records against permitted volume.',legal:'C&D WASTE RULES 2016',team:'Team East',sla:'Scheduled 17:10'},
+ {r:7,id:'ENF-0435',n:'DG-set cluster, Jahangirpuri',w:'Jahangirpuri',type:'industrial',score:71,conf:70,impact:'+8 AQI (ward-local)',via:'Acoustic + PM micro-spike pattern, evening peak',via2:'',geo:'28.73°N 77.17°E',act:'Verify GRAP-III DG-set restrictions; check dual-fuel conversion compliance.',legal:'GRAP STAGE III · CAQM DIR. 76',team:'Team North',sla:'Queued · stop 4 of 5'},
+ {r:8,id:'ENF-0417',n:'Bawana Industrial Area, Sector F',w:'Bawana',type:'industrial',score:69,conf:74,impact:'+8 AQI (ward-local)',via:'Stack opacity flags on 2 units',geo:'28.80°N 77.05°E',act:'Opacity test on flagged stacks; verify APCD operation logs.',legal:'AIR ACT 1981 §21',team:'Team North',sla:'Queued · stop 5 of 5'}];
+let selTarget=0;
+function renderEnforce(){
+  document.getElementById('en-kpis').innerHTML=
+    kpiCard('Open targets (city)','28',`Auto-generated from attribution engine`)+
+    kpiCard('Routed today','8 <small>· 2 teams</small>','Ranked by expected AQI impact')+
+    kpiCard('Signal → dispatch (median)','47 <small>min</small>','vs <b>~72 h</b> manual baseline · <b>−98%</b>')+
+    kpiCard('Verification rate (7 d)','86%','Field-confirmed vs model-flagged');
+  document.getElementById('targetTable').innerHTML=
+   `<tr><th>#</th><th>Target</th><th>Type</th><th>Confidence</th><th>Est. impact</th><th>Score</th></tr>`+
+   TARGETS.map((t,i)=>`<tr class="row ${i===selTarget?'on':''}" data-i="${i}" tabindex="0">
+     <td class="rank">${t.r}</td>
+     <td><b>${t.n}</b>${t.verified?'<span class="vtag">✓ VERIFIED</span>':''}<div style="font-size:11px;color:var(--muted)">${t.w}${t.dispatched?' · <b style="color:var(--accent-ink)">dispatched</b>':''}</div></td>
+     <td><span class="tag ${t.type}">${t.type}</span></td>
+     <td><span class="confbar"><span class="cb"><i style="width:${t.conf}%"></i></span><span>${t.conf}%</span></span></td>
+     <td style="font-size:12px">${t.impact}</td>
+     <td class="score">${t.score}</td></tr>`).join('');
+  renderPacket();renderRoute();renderSim();
+}
+function miniProof(t){ // small "satellite" proof visual
+  if(t.type==='stubble')return`<svg viewBox="0 0 360 120"><rect width="360" height="120" fill="#E8E0CB"/>
+    ${[0,1,2,3,4,5].map(i=>`<rect x="${18+i*56}" y="16" width="46" height="36" rx="3" fill="${i<4?'#D9C79A':'#8FBF6E'}"/>`).join('')}
+    ${[0,1,2].map(i=>`<circle cx="${44+i*56}" cy="86" r="9" fill="#D64545" opacity=".3"/><circle cx="${44+i*56}" cy="86" r="3.6" fill="#B91C1C"/>`).join('')}
+    <rect x="186" y="70" width="46" height="32" rx="3" fill="#D9C79A" stroke="#C2410C" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <text x="246" y="92" font-size="10" font-family="Calibri, Segoe UI, sans-serif" fill="#7A5B14">flagged −52 h</text></svg>`;
+  if(t.type==='construction')return`<svg viewBox="0 0 360 120"><rect width="360" height="120" fill="#DDE5E9"/>
+    <rect x="24" y="30" width="120" height="66" fill="#C4B79A"/><rect x="52" y="14" width="10" height="82" fill="#8B93A0"/><rect x="30" y="20" width="70" height="6" fill="#8B93A0"/>
+    <ellipse cx="200" cy="70" rx="66" ry="26" fill="#B7A98A" opacity=".55"/><ellipse cx="252" cy="56" rx="48" ry="20" fill="#B7A98A" opacity=".4"/>
+    <text x="150" y="106" font-size="10" font-family="Calibri, Segoe UI, sans-serif" fill="#5D7184">dust plume · permit expired 14 Oct</text></svg>`;
+  return`<svg viewBox="0 0 360 120"><rect width="360" height="120" fill="#D8DEE6"/>
+    <rect x="40" y="46" width="34" height="50" fill="#8B93A0"/><rect x="86" y="58" width="34" height="38" fill="#8B93A0"/>
+    <rect x="47" y="20" width="9" height="30" fill="#5B6472"/><ellipse cx="70" cy="16" rx="30" ry="11" fill="#6B7280" opacity=".5"/><ellipse cx="108" cy="10" rx="38" ry="12" fill="#6B7280" opacity=".35"/>
+    <text x="150" y="100" font-size="10" font-family="Calibri, Segoe UI, sans-serif" fill="#5D7184">thermal / opacity anomaly · 2 units</text></svg>`}
+function renderPacket(){
+  const t=TARGETS[selTarget];
+  document.getElementById('pk-id').textContent=`${t.id} · ${DATES[simDay].toUpperCase()} 14:30`;
+  document.getElementById('packetBody').innerHTML=
+   `<div class="ph"><div><h4>${t.n}</h4><div class="geo">${t.geo} · ward ${t.w.toUpperCase()}</div></div><span class="tag ${t.type}">${t.type}</span></div>
+    <div class="proof">${miniProof(t)}<div class="cap">SATELLITE PROOF EXTRACT · SENTINEL-2 / VIIRS COMPOSITE</div></div>
+    <div class="pk-grid">
+      <div class="f"><div class="l">Detected via</div><div class="v" style="font-size:12px">${t.via}</div></div>
+      <div class="f"><div class="l">Attribution confidence</div><div class="v">${t.conf}%</div></div>
+      <div class="f"><div class="l">Estimated AQI impact</div><div class="v" style="font-size:12px">${t.impact}</div></div>
+      <div class="f"><div class="l">Assigned · status</div><div class="v" style="font-size:12px">${t.team} · ${t.sla}</div></div>
+    </div>
+    <div class="action-box"><div class="l">Recommended action</div><p>${t.act}</p><div class="legal">LEGAL BASIS: ${t.legal}</div></div>
+    <div class="btnrow">
+      <button class="btn ${t.dispatched?'done':'primary'}" id="btnDispatch">${t.dispatched?'✓ Dispatched':'Dispatch team'}</button>
+      <button class="btn" id="btnExport">Export packet (PDF)</button>
+      <button class="btn ${t.verified?'done':''}" id="btnVerify">${t.verified?'✓ Verified':'Mark verified'}</button>
+    </div>`;
+}
+function renderRoute(){
+  const stops=[[352,246,'1','C-118 Rohini'],[266,322,'2','Mundka waste'],[430,268,'3','Wazirpur'],[466,216,'4','Jahangirpuri DG'],[382,142,'5','Bawana Sec-F']];
+  const path=stops.map(s=>s.slice(0,2));
+  document.getElementById('routeMap').innerHTML=
+  `<svg viewBox="120 20 680 720" role="img" aria-label="Optimised inspection route">
+     <path d="M${CITY.map(p=>p.join(' ')).join(' L')} Z" fill="#FAFCFD" stroke="#B9C8D3" stroke-width="2"/>
+     <path d="M562 40 C 590 140, 556 222, 578 302 C 598 382, 560 462, 598 542" stroke="#A9C6D8" stroke-width="11" fill="none" opacity=".6" stroke-linecap="round"/>
+     <polyline points="${path.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#155E75" stroke-width="3" stroke-dasharray="8 6" stroke-linecap="round"/>
+     ${stops.map(s=>`<g><circle cx="${s[0]}" cy="${s[1]}" r="13" fill="#155E75"/><text x="${s[0]}" y="${s[1]+4.5}" text-anchor="middle" font-size="12.5" font-weight="800" fill="#fff">${s[2]}</text>
+       <text x="${s[0]+20}" y="${s[1]+4}" font-size="11.5" font-weight="650" fill="#182530">${s[3]}</text></g>`).join('')}
+     <g font-family="var(--mono)" font-size="11" fill="#5D7184"><text x="150" y="700">TEAM NORTH · DEPART 14:45 · TSP-OPTIMISED OVER ROAD GRAPH</text></g>
+   </svg>`;
+}
+
+/* ═══════════ impact simulator (tab 4) ═══════════ */
+const SIM_OPTS=[
+ {n:'Dispatch to burn cluster SNP-04',d:'stubble source · plume feeds NW wards in 6–9 h',city:11.5,ward:'−44 AQI Jahangirpuri',cr:14.2},
+ {n:'Stop-work at site C-118, Rohini Sec-24',d:'construction dust · permit already expired',city:2.0,ward:'−12 AQI within 2 km',cr:2.1},
+ {n:'GRAP-III DG-set enforcement, Jahangirpuri',d:'evening-peak micro-spikes',city:1.5,ward:'−8 AQI ward-local',cr:1.6}];
+let simSel=new Set([0]);
+function renderSim(){
+  const tot=[...simSel].reduce((a,i)=>a+SIM_OPTS[i].city,0);
+  const cr=[...simSel].reduce((a,i)=>a+SIM_OPTS[i].cr,0);
+  const wardTop=simSel.has(0)?'−44 (Jahangirpuri)':(simSel.size?SIM_OPTS[[...simSel][0]].ward.replace(' AQI',''):'—');
+  // 24 h curves
+  const W=560,H=180,pad={l:38,r:10,t:12,b:24};
+  const px=h=>pad.l+(W-pad.l-pad.r)*h/24, py=v=>pad.t+(H-pad.t-pad.b)*(1-(v-300)/(420-300));
+  const base=h=>361+(383-361)*h/24+7*Math.sin(h/24*2*Math.PI+0.8);
+  const ramp=h=>Math.min(1,Math.max(0,(h-3)/6));
+  let lb='',li='';
+  for(let h=0;h<=24;h++){lb+=`${h?'L':'M'}${px(h).toFixed(1)} ${py(base(h)).toFixed(1)} `;
+    li+=`${h?'L':'M'}${px(h).toFixed(1)} ${py(base(h)-tot*ramp(h)).toFixed(1)} `}
+  let grid='';for(const g of[320,360,400])grid+=`<line x1="${pad.l}" y1="${py(g)}" x2="${W-pad.r}" y2="${py(g)}" stroke="#E8EEF2"/><text x="${pad.l-6}" y="${py(g)+4}" text-anchor="end" font-size="10" fill="#8FA3B3">${g}</text>`;
+  let xt='';for(const h of[0,6,12,18,24])xt+=`<text x="${px(h)}" y="${H-7}" text-anchor="middle" font-size="10" fill="#8FA3B3">${h===0?'now':'+'+h+' h'}</text>`;
+  document.getElementById('simBody').innerHTML=
+    SIM_OPTS.map((o,i)=>`<label class="simrow"><input type="checkbox" data-sim="${i}" ${simSel.has(i)?'checked':''}>
+      <span class="t"><b>${o.n}</b><p>${o.d} · est. ${o.ward}</p></span></label>`).join('')+
+   `<div class="sim-tot">
+      <div class="b"><div class="l">Citywide mean · +12 h</div><div class="v">−${tot.toFixed(1).replace('.0','')} AQI</div></div>
+      <div class="b"><div class="l">Peak ward relief</div><div class="v">${wardTop}</div></div>
+      <div class="b money"><div class="l">Health burden avoided</div><div class="v">₹ ${cr.toFixed(1)} cr</div></div>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+      ${grid}${xt}
+      <path d="${lb}" fill="none" stroke="#B0BFCB" stroke-width="2" stroke-dasharray="5 5"/>
+      <path d="${li}" fill="none" stroke="#155E75" stroke-width="2.6"/>
+      <text x="${px(20)}" y="${py(base(20))-7}" font-size="10.5" fill="#8FA3B3">no action</text>
+      <text x="${px(15)}" y="${py(base(15)-tot*ramp(15))+15}" font-size="10.5" font-weight="700" fill="#0E4B5E">with today's plan</text>
+    </svg>
+    <p class="note">Health burden = exposure-hours avoided × population-weighted ₹/AQI coefficient (state-level burden estimates). Demo values; methodology in appendix.</p>`;
+}
+
+/* ═══════════ TAB 5 · forecast ═══════════ */
+const LANGS=[['en','English'],['hi','हिन्दी'],['pa','ਪੰਜਾਬੀ'],['bn','বাংলা'],['ta','தமிழ்'],['kn','ಕನ್ನಡ']];
+let selLang='en', selFc='Anand Vihar';
+const BANDN={en:{P:'Poor',VP:'Very Poor',S:'Severe'},hi:{P:"'खराब'",VP:"'बहुत खराब'",S:"'गंभीर'"},pa:{P:"'ਖਰਾਬ'",VP:"'ਬਹੁਤ ਖਰਾਬ'",S:"'ਗੰਭੀਰ'"},bn:{P:"'খারাপ'",VP:"'খুব খারাপ'",S:"'চরম'"},ta:{P:"'மோசம்'",VP:"'மிக மோசம்'",S:"'மிகக் கடுமை'"},kn:{P:"'ಕಳಪೆ'",VP:"'ತುಂಬಾ ಕಳಪೆ'",S:"'ತೀವ್ರ'"}};
+function bandKey(v){return v>400?'S':v>300?'VP':'P'}
+function advisoryText(lang,w,v){
+  const b=BANDN[lang][bandKey(v)], sev=v>300;
+  const T={
+   en:sev?`Air quality in ${w} is <b>${b} (AQI ${v})</b>. Avoid outdoor exercise. Children, the elderly, and anyone with breathing or heart conditions should stay indoors. Schools are advised to move activity indoors; wear an N95 mask if travel is necessary.`
+         :`Air quality in ${w} is <b>${b} (AQI ${v})</b>. Sensitive groups should limit prolonged outdoor exertion; others reduce heavy outdoor activity. Keep windows closed during evening peak hours.`,
+   hi:sev?`${w} में वायु गुणवत्ता <b>${b} श्रेणी (AQI ${v})</b> में है। बाहर व्यायाम न करें। बच्चे, बुज़ुर्ग और सांस या हृदय रोग से पीड़ित व्यक्ति घर के अंदर रहें। स्कूल गतिविधियाँ अंदर करायें; यात्रा ज़रूरी हो तो N95 मास्क पहनें।`
+         :`${w} में वायु गुणवत्ता <b>${b} श्रेणी (AQI ${v})</b> में है। संवेदनशील लोग लंबे समय बाहर परिश्रम से बचें; अन्य लोग भारी बाहरी गतिविधि कम करें। शाम के समय खिड़कियाँ बंद रखें।`,
+   pa:sev?`${w} ਵਿੱਚ ਹਵਾ ਦੀ ਗੁਣਵੱਤਾ <b>${b} ਸ਼੍ਰੇਣੀ (AQI ${v})</b> ਵਿੱਚ ਹੈ। ਬਾਹਰ ਕਸਰਤ ਨਾ ਕਰੋ। ਬੱਚੇ, ਬਜ਼ੁਰਗ ਅਤੇ ਸਾਹ ਜਾਂ ਦਿਲ ਦੇ ਰੋਗੀ ਘਰ ਅੰਦਰ ਰਹਿਣ। ਸਫ਼ਰ ਜ਼ਰੂਰੀ ਹੋਵੇ ਤਾਂ N95 ਮਾਸਕ ਪਾਓ।`
+         :`${w} ਵਿੱਚ ਹਵਾ ਦੀ ਗੁਣਵੱਤਾ <b>${b} ਸ਼੍ਰੇਣੀ (AQI ${v})</b> ਵਿੱਚ ਹੈ। ਸੰਵੇਦਨਸ਼ੀਲ ਵਿਅਕਤੀ ਲੰਮੀ ਬਾਹਰੀ ਮਿਹਨਤ ਤੋਂ ਬਚਣ; ਬਾਕੀ ਭਾਰੀ ਗਤੀਵਿਧੀ ਘਟਾਉਣ।`,
+   bn:sev?`${w}-এ বায়ুর মান <b>${b} পর্যায়ে (AQI ${v})</b>। বাইরে ব্যায়াম করবেন না। শিশু, বয়স্ক এবং শ্বাসকষ্ট বা হৃদরোগে আক্রান্তরা ঘরের ভিতরে থাকুন। যাতায়াত জরুরি হলে N95 মাস্ক ব্যবহার করুন।`
+         :`${w}-এ বায়ুর মান <b>${b} পর্যায়ে (AQI ${v})</b>। সংবেদনশীলরা দীর্ঘ বাইরের পরিশ্রম এড়িয়ে চলুন; অন্যরা ভারী কাজ কমান।`,
+   ta:sev?`${w} பகுதியில் காற்றின் தரம் <b>${b} (AQI ${v})</b> நிலையில் உள்ளது. வெளியில் உடற்பயிற்சி வேண்டாம். குழந்தைகள், முதியவர்கள், சுவாச அல்லது இதய நோயாளிகள் வீட்டிற்குள் இருக்கவும். பயணம் அவசியமெனில் N95 முகக்கவசம் அணியவும்.`
+         :`${w} பகுதியில் காற்றின் தரம் <b>${b} (AQI ${v})</b>. உணர்திறன் உள்ளவர்கள் நீண்ட வெளிப்புற உழைப்பை தவிர்க்கவும்; மற்றவர்கள் கடின செயல்பாடுகளை குறைக்கவும்.`,
+   kn:sev?`${w} ನಲ್ಲಿ ವಾಯು ಗುಣಮಟ್ಟ <b>${b} (AQI ${v})</b> ಹಂತದಲ್ಲಿದೆ. ಹೊರಗೆ ವ್ಯಾಯಾಮ ಮಾಡಬೇಡಿ. ಮಕ್ಕಳು, ವೃದ್ಧರು ಮತ್ತು ಉಸಿರಾಟ ಅಥವಾ ಹೃದಯ ಸಮಸ್ಯೆ ಇರುವವರು ಮನೆಯೊಳಗೆ ಇರಲಿ. ಪ್ರಯಾಣ ಅಗತ್ಯವಿದ್ದರೆ N95 ಮಾಸ್ಕ್ ಧರಿಸಿ.`
+         :`${w} ನಲ್ಲಿ ವಾಯು ಗುಣಮಟ್ಟ <b>${b} (AQI ${v})</b>. ಸೂಕ್ಷ್ಮ ವ್ಯಕ್ತಿಗಳು ದೀರ್ಘ ಹೊರಾಂಗಣ ಶ್ರಮ ತಪ್ಪಿಸಿ; ಇತರರು ಭಾರೀ ಚಟುವಟಿಕೆ ಕಡಿಮೆ ಮಾಡಿ.`};
+  return T[lang];
+}
+function vulnFor(w){const h=hashS(w);return[[12+h%18,'schools'],[1+h%5,'hospitals'],['~'+(20+h%30)+'k','outdoor workers (est.)'],[(35+h%40)+'k','residents 60+']]}
+function renderForecast(){
+  const wardSel=document.getElementById('fcWard');
+  wardSel.innerHTML=STATIONS.slice().sort((a,b)=>stAqi(b)-stAqi(a)).map(sn=>`<option ${sn.n===selFc?'selected':''}>${sn.n}</option>`).join('');
+  const v0=stAqi(STATIONS.find(sn=>sn.n===selFc));
+  document.getElementById('fcTitle').textContent=`72-hour ward forecast — ${selFc}`;
+  const W=760,H=300,pad={l:46,r:14,t:16,b:30};
+  const hours=72;const px=h=>pad.l+(W-pad.l-pad.r)*h/hours;const py=v=>pad.t+(H-pad.t-pad.b)*(1-(v-150)/(500-150));
+  _s=11+hashS(selFc)%97;let model=[],lo=[],hi=[];
+  for(let h=0;h<=hours;h++){const diur=26*Math.sin((h%24)/24*2*Math.PI+1.1);const trend=-0.62*h*(v0/428);
+    const m=v0+diur+trend+(rnd()*10-5); model.push(m); lo.push(m-18-h*0.28); hi.push(m+18+h*0.28); }
+  const persist=model.map(()=>v0);
+  const line=a=>a.map((vv,h)=>`${h?'L':'M'}${px(h).toFixed(1)} ${py(vv).toFixed(1)}`).join(' ');
+  const band=`M${lo.map((vv,h)=>`${px(h).toFixed(1)} ${py(vv).toFixed(1)}`).join(' L')} L${hi.slice().reverse().map((vv,i)=>`${px(hours-i).toFixed(1)} ${py(vv).toFixed(1)}`).join(' L')} Z`;
+  let grid='';for(const gv of [200,300,400,500])grid+=`<line x1="${pad.l}" y1="${py(gv)}" x2="${W-pad.r}" y2="${py(gv)}" stroke="#E8EEF2"/><text x="${pad.l-8}" y="${py(gv)+4}" text-anchor="end" font-size="10.5" fill="#8FA3B3">${gv}</text>`;
+  let xt='';for(const h of [0,24,48,72])xt+=`<text x="${px(h)}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="#8FA3B3">${h===0?'now':'+'+h+' h'}</text>`;
+  document.getElementById('fcChart').innerHTML=
+   `<svg viewBox="0 0 ${W} ${H}">
+      ${grid}${xt}
+      <path d="${band}" fill="#155E75" opacity=".10"/>
+      <path d="${line(persist)}" fill="none" stroke="#B0BFCB" stroke-width="2" stroke-dasharray="5 5"/>
+      <path d="${line(model)}" fill="none" stroke="#155E75" stroke-width="2.6"/>
+      <g font-size="11" font-weight="650"><text x="${px(58)}" y="${py(persist[58])-8}" fill="#8FA3B3">persistence</text>
+      <text x="${px(50)}" y="${py(model[50])+22}" fill="#0E4B5E">AirSight model · 90% CI</text></g>
+    </svg>
+    <p class="note">Model inputs: IMD 72 h wind &amp; mixing-height forecast · predicted upwind burn events (Stubble Watch) · traffic calendar · seasonal emission profile. Grid resolution 1 km, ward-aggregated here. Choose any ward from the selector above.</p>`;
+  document.getElementById('langRow').innerHTML=LANGS.map(l=>`<button class="lang ${l[0]===selLang?'on':''}" data-l="${l[0]}">${l[1]}</button>`).join('');
+  const bn={S:'SEVERE',VP:'VERY POOR',P:'POOR'}[bandKey(v0)];
+  document.getElementById('advisoryBox').innerHTML=
+   `<div class="hd"><span class="b" style="background:${aqiColor(v0)}">${bn} · AQI ${v0}</span><span class="w">${selFc.toUpperCase()} · NEXT 24 H</span></div>${advisoryText(selLang,selFc,v0)}`;
+  document.getElementById('vulnRow').innerHTML=
+   vulnFor(selFc).map(vv=>`<span class="v"><b>${vv[0]}</b>${vv[1]}</span>`).join('');
+}
+
+/* ═══════════ wiring ═══════════ */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.stage').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');document.getElementById('stage-'+t.dataset.tab).classList.add('active')}));
+document.addEventListener('click',e=>{
+  const w=e.target.closest('#wardList li');if(w){selWard=w.dataset.w;renderAttrib();return}
+  const r=e.target.closest('#targetTable .row');if(r){selTarget=+r.dataset.i;renderEnforce();return}
+  const l=e.target.closest('.lang');if(l){selLang=l.dataset.l;renderForecast();return}
+  const stn=e.target.closest('.stn');if(stn){selStation=stn.dataset.n;renderCommand();return}
+  if(e.target.closest('#attrBack')){selStation=null;renderCommand();return}
+  const ph=e.target.closest('.plot-hit');if(ph){selPlot=+ph.dataset.i;renderPredict();return}
+  const kg=e.target.closest('.kpi.link');if(kg){document.querySelector(`.tab[data-tab="${kg.dataset.goto}"]`).click();return}
+  if(e.target.closest('#citySel')){toast('Multi-city rollout is Module D on the roadmap — Delhi NCR is the pilot configuration. Onboarding a city = ward polygons + station list + registries + language pack.');return}
+  if(e.target.closest('#btnDispatch')){const t=TARGETS[selTarget];
+    if(!t.dispatched){t.dispatched=true;t.sla='Dispatched 14:36 · ETA 41 min';
+      DYN_FEED.unshift(['14:36','#155E75',`<b>Dispatch</b> · ${t.team} to ${t.n} · route re-optimised · ETA 41 min`]);
+      toast(`${t.team} dispatched to ${t.n} — packet pushed to field app`);renderEnforce();renderCommand()}return}
+  if(e.target.closest('#btnExport')){toast('Evidence packet exported (PDF) — demo action');return}
+  if(e.target.closest('#btnVerify')){const t=TARGETS[selTarget];
+    if(!t.verified){t.verified=true;
+      DYN_FEED.unshift(['14:38','#1F9D57',`<b>Field verification</b> · ${t.n} confirmed by ${t.team} · label fed back to model`]);
+      toast(`${t.n} marked verified — outcome will retrain the model`);renderEnforce();renderCommand()}return}
+});
+document.addEventListener('change',e=>{
+  const cb=e.target.closest('input[data-sim]');
+  if(cb){const i=+cb.dataset.sim;cb.checked?simSel.add(i):simSel.delete(i);renderSim();return}
+  if(e.target.id==='fcWard'){selFc=e.target.value;renderForecast();return}
+});
+function refreshAll(){
+  document.getElementById('simClock').textContent=`Wed ${DATES[simDay]} 2026 · 14:30 IST`.replace('Wed Oct 24','Sat Oct 24').replace('Wed Oct 25','Sun Oct 25').replace('Wed Oct 26','Mon Oct 26').replace('Wed Oct 27','Tue Oct 27').replace('Wed Oct 29','Thu Oct 29').replace('Wed Oct 30','Fri Oct 30');
+  renderCommand();renderAttrib();renderPredict();renderTimeline();renderEnforce();renderForecast();
+}
+refreshAll();
+</script>
+</body>
+</html>
