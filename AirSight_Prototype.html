@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AirSight — Urban Air Quality Intelligence · Delhi NCR</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23103c47'/%3E%3Cpath d='M5 17a11 11 0 0 1 22 0M10 17a6 6 0 0 1 12 0' fill='none' stroke='%23bcf18a' stroke-width='2'/%3E%3Ccircle cx='16' cy='23' r='3' fill='%23ffffff'/%3E%3C/svg%3E">
 <style>
 :root{
   --paper:#F2F5F7; --surface:#FFFFFF; --ink:#182530; --muted:#5D7184; --faint:#8FA3B3;
@@ -243,9 +244,15 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
 .backlink:hover{text-decoration:underline}
 .footer{max-width:1560px;margin:0 auto;padding:6px 22px 20px;font-family:var(--mono);font-size:10.5px;color:var(--faint);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media(max-width:1080px){.grid-main{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+
+.prototype-notice{padding:15px 24px;background:#103c47;color:#fff;font:16px/1.55 Calibri,"Segoe UI",sans-serif;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.prototype-notice p{max-width:1100px}.prototype-notice a{color:#bdf38f;white-space:nowrap;font-weight:700}
+.tabs{overflow-x:auto}.tab{white-space:nowrap}.card{min-width:0}
+@media(max-width:700px){.topbar{height:auto;min-height:58px;flex-wrap:wrap;padding:15px;gap:12px}.top-right{flex-wrap:wrap;margin-left:0}.top-divider{display:none}.tabs{padding:0 10px}.stage{padding:15px}.grid-main{grid-template-columns:minmax(0,1fr)!important}.timeline{flex-wrap:wrap}.tl-track{min-width:0;overflow:auto}.pills,.pillrow{grid-template-columns:repeat(2,minmax(0,1fr))}.footer{font-size:12px}.prototype-notice{padding:14px 16px}.attr-row{grid-template-columns:100px minmax(0,1fr) 75px;gap:5px}.target-table{overflow-x:auto}}
 </style>
 </head>
 <body>
+<aside class="prototype-notice" aria-label="Prototype status"><p><strong>SIMULATION ONLY.</strong> All readings, source shares, confidence values, accuracy scores and impact figures are illustrative. No live feeds or Claude API are connected. Actions affect this browser only.</p><a href="index.html">About AirSight</a></aside>
 
 <header class="topbar">
   <div class="brand">
@@ -264,7 +271,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
   <div class="top-right">
     <span class="chip chip-sim">Simulation · Oct 24–30</span>
     <span class="sim-clock" id="simClock">Wed 28 Oct 2026 · 14:30 IST</span>
-    <span class="chip chip-live"><span class="dot"></span>38 / 40 stations reporting</span>
+    <span class="chip chip-live"><span class="dot"></span>Simulated station status</span>
   </div>
 </header>
 
@@ -282,7 +289,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
   <div class="grapbar" id="grapBar"></div>
   <div class="grid-main">
     <div class="card">
-      <div class="card-h"><h3>City grid · live AQI &amp; wind field</h3><span class="meta">1 km grid · IDW from CAAQMS · WIND 310° / 14 km/h</span></div>
+      <div class="card-h"><h3>City grid · simulated AQI &amp; wind field</h3><span class="meta">1 km grid · IDW from CAAQMS · WIND 310° / 14 km/h</span></div>
       <div class="mapwrap" id="cityMap"></div>
       <div class="legend" id="cityLegend"></div>
     </div>
@@ -395,7 +402,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
         <div class="card-b fc-chart" id="fcChart"></div>
       </div>
       <div class="card">
-        <div class="card-h"><h3>Backtest accuracy · Oct 2025 episode</h3><span class="meta">HOURLY · 40 STATIONS · 21 DAYS</span></div>
+        <div class="card-h"><h3>Illustrative accuracy · simulated episode</h3><span class="meta">HOURLY · 40 STATIONS · 21 DAYS</span></div>
         <div class="card-b">
           <div class="rmse">
             <div class="box"><div class="l">Persistence baseline RMSE</div><div class="v">41.7 <small style="font-size:12px;color:var(--muted)">AQI pts</small></div></div>
@@ -419,8 +426,8 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
 </section>
 
 <footer class="footer">
-  <span>AIRSIGHT PROTOTYPE v0.9 · SYNTHETIC + HISTORICAL-PATTERN DATA · CPCB AQI SCALE</span>
-  <span>DATA LAYERS: CAAQMS · SENTINEL-2 · VIIRS/MODIS · SENTINEL-5P · IMD WIND · DPCC PERMIT REGISTRY · ROADMAP FEEDS: IITM-DSS · SAFAR · SENSOR MESH · GEO FIRE WATCH</span>
+  <span>AIRSIGHT PROTOTYPE v0.9 / PROJECT PRESENTATION UPDATE · SYNTHETIC + HISTORICAL-PATTERN DATA · CPCB AQI SCALE</span>
+  <span>PROPOSED DATA SOURCES (NOT CONNECTED): CAAQMS · SENTINEL-2 · VIIRS/MODIS · SENTINEL-5P · IMD WIND · DPCC PERMIT REGISTRY · ROADMAP FEEDS: IITM-DSS · SAFAR · SENSOR MESH · GEO FIRE WATCH</span>
 </footer>
 
 <div id="toast" aria-live="polite"></div>
@@ -770,7 +777,7 @@ function renderPredict(){
       <div class="pill hot"><div class="lab">Top cluster</div><div class="val">SNP-04</div></div>
     </div>
     <p style="font-size:12.5px;margin-top:13px">Prediction runs on ground truth, not just pixels. Field agronomists geotag every plot and record the farmer, crop and sowing date. The crop calendar projects a harvest window; Sentinel-2 confirms the canopy→bare-soil transition; burn probability then combines district burn propensity, days-since-harvest and the IMD dry-spell index — plots are flagged and officers alerted <b>before any fire exists</b>.</p>
-    <p class="conf-note">Backtest on Oct–Nov 2025: 74% of actual fires occurred on plots flagged in advance; median lead time 52 h. Detection alone is now being gamed — burning peaks after the ~1:30 pm satellite overpass, so fire counts fall while smoke doesn't. A sowing-date prediction has no overpass to dodge.</p>`;
+    <p class="conf-note">Illustrative values only: 74% pre-flag rate and 52 h lead time are scenario assumptions, not measured backtest results. Operational use requires historical validation with independently verified fire events.</p>`;
   const wardEta=[['Bawana','06:10 h','+41 AQI'],['Rohini','06:55 h','+37 AQI'],['Jahangirpuri','07:20 h','+44 AQI'],['Punjabi Bagh','08:05 h','+31 AQI'],['ITO','08:50 h','+22 AQI']];
   document.getElementById('plumePanel').innerHTML=fires?
    `<table class="ttable"><tr><th>Ward (downwind)</th><th>Smoke ETA</th><th>Est. impact</th></tr>${
@@ -853,7 +860,7 @@ function renderPacket(){
     <div class="action-box"><div class="l">Recommended action</div><p>${t.act}</p><div class="legal">LEGAL BASIS: ${t.legal}</div></div>
     <div class="btnrow">
       <button class="btn ${t.dispatched?'done':'primary'}" id="btnDispatch">${t.dispatched?'✓ Dispatched':'Dispatch team'}</button>
-      <button class="btn" id="btnExport">Export packet (PDF)</button>
+      <button class="btn" id="btnExport">Download demo packet (.txt)</button>
       <button class="btn ${t.verified?'done':''}" id="btnVerify">${t.verified?'✓ Verified':'Mark verified'}</button>
     </div>`;
 }
@@ -982,12 +989,21 @@ document.addEventListener('click',e=>{
   if(e.target.closest('#btnDispatch')){const t=TARGETS[selTarget];
     if(!t.dispatched){t.dispatched=true;t.sla='Dispatched 14:36 · ETA 41 min';
       DYN_FEED.unshift(['14:36','#155E75',`<b>Dispatch</b> · ${t.team} to ${t.n} · route re-optimised · ETA 41 min`]);
-      toast(`${t.team} dispatched to ${t.n} — packet pushed to field app`);renderEnforce();renderCommand()}return}
-  if(e.target.closest('#btnExport')){toast('Evidence packet exported (PDF) — demo action');return}
+      toast(`Simulation: ${t.team} marked dispatched to ${t.n}. No message sent.`);renderEnforce();renderCommand()}return}
+  if(e.target.closest('#btnExport')){const t=TARGETS[selTarget];
+    const record=['AIRSIGHT SIMULATED EVIDENCE PACKET','SIMULATION ONLY - NOT AN OPERATIONAL OR LEGAL RECORD','',
+      'Target: '+t.n,'ID: '+t.id,'Area: '+t.w,'Illustrative priority score: '+t.score,
+      'Illustrative source confidence: '+t.conf,'Illustrative source: '+t.via,
+      'Illustrative coordinates: '+t.geo,'',
+      'Next step: Review the example evidence; no real-world action is authorised.',
+      'All data and claimed outcomes are simulated. No external action was sent.'].join('\n');
+    const url=URL.createObjectURL(new Blob([record],{type:'text/plain;charset=utf-8'}));
+    const a=document.createElement('a');a.href=url;a.download='AirSight-simulation-'+t.id+'.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast('Simulated evidence packet downloaded as a text file');return}
   if(e.target.closest('#btnVerify')){const t=TARGETS[selTarget];
     if(!t.verified){t.verified=true;
-      DYN_FEED.unshift(['14:38','#1F9D57',`<b>Field verification</b> · ${t.n} confirmed by ${t.team} · label fed back to model`]);
-      toast(`${t.n} marked verified — outcome will retrain the model`);renderEnforce();renderCommand()}return}
+      DYN_FEED.unshift(['14:38','#1F9D57',`<b>Field verification</b> · ${t.n} confirmed by ${t.team} · simulated feedback only`]);
+      toast(`Simulation: ${t.n} marked verified. No model is trained.`);renderEnforce();renderCommand()}return}
 });
 document.addEventListener('change',e=>{
   const cb=e.target.closest('input[data-sim]');
@@ -999,6 +1015,16 @@ function refreshAll(){
   renderCommand();renderAttrib();renderPredict();renderTimeline();renderEnforce();renderForecast();
 }
 refreshAll();
+function openLinkedTab(){
+  const id=location.hash.slice(1);
+  if(['command','attrib','predict','enforce','forecast'].includes(id)) document.querySelector('.tab[data-tab="'+id+'"]').click();
+}
+window.addEventListener('hashchange',openLinkedTab);
+openLinkedTab();
+const tabButtons=[...document.querySelectorAll('.tab')];
+function syncTabs(){tabButtons.forEach(t=>{const active=t.classList.contains('active');t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1;t.setAttribute('aria-controls','stage-'+t.dataset.tab);});}
+tabButtons.forEach((t,i)=>{t.addEventListener('click',syncTabs);t.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const n=e.key==='Home'?0:e.key==='End'?tabButtons.length-1:(i+(e.key==='ArrowRight'?1:-1)+tabButtons.length)%tabButtons.length;tabButtons[n].focus();tabButtons[n].click();}});});
+syncTabs();
 </script>
 </body>
 </html>
